@@ -186,4 +186,60 @@
             // Calculate the latitude of origin in radians
 
 ::contentReference[oaicite:0]{index=0}
+            const φ0 = latitudeOfOrigin * Math.PI / 180;
+
+            // Remove false easting/northing
+            const x = easting - falseEasting;
+            const y = northing - falseNorthing;
+
+            // Calculate flattening and eccentricity
+            const b = a * (1 - f);
+            const e2 = (a * a - b * b) / (a * a);
+
+            // Meridian arc approximation
+            const M0 = 0; // At latitude of origin
+            const M = M0 + y / scaleFactor;
+
+            // Footpoint latitude (iterative approximation)
+            let φf = M / a;
+            for (let i = 0; i < 5; i++) {
+                const Ma = a * ((1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 * e2 * e2 / 256) * φf
+                    - (3 * e2 / 8 + 3 * e2 * e2 / 32 + 45 * e2 * e2 * e2 / 1024) * Math.sin(2 * φf)
+                    + (15 * e2 * e2 / 256 + 45 * e2 * e2 * e2 / 1024) * Math.sin(4 * φf)
+                    - (35 * e2 * e2 * e2 / 3072) * Math.sin(6 * φf));
+                φf = φf + (M - Ma) / a;
+            }
+
+            const sinφf = Math.sin(φf);
+            const cosφf = Math.cos(φf);
+            const tanφf = Math.tan(φf);
+            const ν = a / Math.sqrt(1 - e2 * sinφf * sinφf);
+            const ρ = a * (1 - e2) / Math.pow(1 - e2 * sinφf * sinφf, 1.5);
+            const η2 = ν / ρ - 1;
+
+            const E = x;
+            const E2 = E * E;
+
+            // Latitude calculation
+            const φ = φf - (tanφf / (2 * ρ * ν)) * E2
+                      + (tanφf / (24 * ρ * Math.pow(ν, 3))) * (5 + 3 * tanφf * tanφf + η2 - 9 * tanφf * tanφf * η2) * Math.pow(E, 4);
+
+            // Longitude calculation
+            const λ = λ0 + (1 / (cosφf * ν)) * E
+                      - (1 / (6 * cosφf * Math.pow(ν, 3))) * (1 + 2 * tanφf * tanφf + η2) * Math.pow(E, 3);
+
+            // Convert radians to degrees
+            const lat = φ * 180 / Math.PI;
+            const lng = λ * 180 / Math.PI;
+
+            return { lat, lng };
+        }
+    </script>
+
+    <!-- Google Maps JS API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap" async defer></script>
+
+</body>
+</html>
+
  
