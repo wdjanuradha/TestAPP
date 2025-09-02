@@ -79,7 +79,53 @@
             { name: "Sheet 1", eastingPrefix: 168, northingPrefix: 875 },
             { name: "Sheet 2", eastingPrefix: 167, northingPrefix: 874 },
             { name: "Sheet 3", eastingPrefix: 169, northingPrefix: 876 },
-            // Add more sheets as needed
+            { name: "Sheet 4", eastingPrefix: 170, northingPrefix: 877 },
+            { name: "Sheet 5", eastingPrefix: 171, northingPrefix: 878 },
+            { name: "Sheet 6", eastingPrefix: 172, northingPrefix: 879 },
+            { name: "Sheet 7", eastingPrefix: 173, northingPrefix: 880 },
+            { name: "Sheet 8", eastingPrefix: 174, northingPrefix: 881 },
+            { name: "Sheet 9", eastingPrefix: 175, northingPrefix: 882 },
+            { name: "Sheet 10", eastingPrefix: 176, northingPrefix: 883 },
+            { name: "Sheet 11", eastingPrefix: 177, northingPrefix: 884 },
+            { name: "Sheet 12", eastingPrefix: 178, northingPrefix: 885 },
+            { name: "Sheet 13", eastingPrefix: 179, northingPrefix: 886 },
+            { name: "Sheet 14", eastingPrefix: 180, northingPrefix: 887 },
+            { name: "Sheet 15", eastingPrefix: 181, northingPrefix: 888 },
+            { name: "Sheet 16", eastingPrefix: 182, northingPrefix: 889 },
+            { name: "Sheet 17", eastingPrefix: 183, northingPrefix: 890 },
+            { name: "Sheet 18", eastingPrefix: 184, northingPrefix: 891 },
+            { name: "Sheet 19", eastingPrefix: 185, northingPrefix: 892 },
+            { name: "Sheet 20", eastingPrefix: 186, northingPrefix: 893 },
+            { name: "Sheet 21", eastingPrefix: 187, northingPrefix: 894 },
+            { name: "Sheet 22", eastingPrefix: 188, northingPrefix: 895 },
+            { name: "Sheet 23", eastingPrefix: 189, northingPrefix: 896 },
+            { name: "Sheet 24", eastingPrefix: 190, northingPrefix: 897 },
+            { name: "Sheet 25", eastingPrefix: 191, northingPrefix: 898 },
+            { name: "Sheet 26", eastingPrefix: 192, northingPrefix: 899 },
+            { name: "Sheet 27", eastingPrefix: 193, northingPrefix: 900 },
+            { name: "Sheet 28", eastingPrefix: 194, northingPrefix: 901 },
+            { name: "Sheet 29", eastingPrefix: 195, northingPrefix: 902 },
+            { name: "Sheet 30", eastingPrefix: 196, northingPrefix: 903 },
+            { name: "Sheet 31", eastingPrefix: 197, northingPrefix: 904 },
+            { name: "Sheet 32", eastingPrefix: 198, northingPrefix: 905 },
+            { name: "Sheet 33", eastingPrefix: 199, northingPrefix: 906 },
+            { name: "Sheet 34", eastingPrefix: 200, northingPrefix: 907 },
+            { name: "Sheet 35", eastingPrefix: 201, northingPrefix: 908 },
+            { name: "Sheet 36", eastingPrefix: 202, northingPrefix: 909 },
+            { name: "Sheet 37", eastingPrefix: 203, northingPrefix: 910 },
+            { name: "Sheet 38", eastingPrefix: 204, northingPrefix: 911 },
+            { name: "Sheet 39", eastingPrefix: 205, northingPrefix: 912 },
+            { name: "Sheet 40", eastingPrefix: 206, northingPrefix: 913 },
+            { name: "Sheet 41", eastingPrefix: 207, northingPrefix: 914 },
+            { name: "Sheet 42", eastingPrefix: 208, northingPrefix: 915 },
+            { name: "Sheet 43", eastingPrefix: 209, northingPrefix: 916 },
+            { name: "Sheet 44", eastingPrefix: 210, northingPrefix: 917 },
+            { name: "Sheet 45", eastingPrefix: 211, northingPrefix: 918 },
+            { name: "Sheet 46", eastingPrefix: 212, northingPrefix: 919 },
+            { name: "Sheet 47", eastingPrefix: 213, northingPrefix: 920 },
+            { name: "Sheet 48", eastingPrefix: 214, northingPrefix: 921 },
+            { name: "Sheet 49", eastingPrefix: 215, northingPrefix: 922 },
+            { name: "Sheet 50", eastingPrefix: 216, northingPrefix: 923 }
         ];
 
         // Populate the map sheet dropdown
@@ -123,17 +169,21 @@
             });
         }
 
-        // Placeholder function for Kandawala to WGS84 conversion
-        // Replace with actual conversion logic
+        // Kandawala to WGS84 conversion function
         function kandawalaToLatLon(easting, northing) {
-            // Example conversion logic (to be replaced with actual formula)
-            const lat = 6 + (northing - 875000) / 100000;
-            const lon = 80 + (easting - 168000) / 100000;
-            return { lat: lat, lng: lon };
-        }
-    </script>
+            // Kandawala projection parameters
+            const centralMeridian = 80 + 46 / 60 + 18.16710 / 3600; // E
+            const latitudeOfOrigin = 7 + 0 / 60 + 1.69750 / 3600; // N
+            const scaleFactor = 0.9999238418;
+            const falseEasting = 200000;
+            const falseNorthing = 200000;
+            const a = 6377276.345; // Semi-major axis of Everest 1830 ellipsoid
+            const f = 1 / 300.8017; // Flattening of Everest 1830 ellipsoid
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+            // Calculate the central meridian in radians
+            const λ0 = centralMeridian * Math.PI / 180;
 
-</body>
-</html>
+            // Calculate the latitude of origin in radians
+
+::contentReference[oaicite:0]{index=0}
+ 
