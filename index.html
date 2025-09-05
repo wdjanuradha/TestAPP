@@ -1,245 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kandawala GR to Google Maps</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: #4CAF50;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        label {
-            font-weight: bold;
-            display: block;
-            margin-top: 10px;
-        }
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #map {
-            width: 100%;
-            height: 400px;
-            margin-top: 20px;
-            border-radius: 8px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Sri Lanka Grid Converter (Kandawala)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.6/proj4.js"></script>
+  <style>
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; padding: 0;
+    }
+    header {
+      background: #161b22;
+      padding: 12px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      color: #58a6ff;
+    }
+    .container {
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    label {
+      font-size: 14px;
+      display: block;
+      margin-top: 12px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+    }
+    input, select {
+      background: #21262d;
+      color: #e6edf3;
+    }
+    button {
+      background: #238636;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover { background: #2ea043; }
+    .output {
+      margin-top: 20px;
+      padding: 15px;
+      background: #161b22;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.6em;
+    }
+    iframe {
+      width: 100%;
+      height: 400px;
+      border: none;
+      border-radius: 6px;
+      margin-top: 15px;
+    }
+  </style>
 </head>
 <body>
+<header>Sri Lanka Grid Converter – Kandawala / WGS84</header>
+<div class="container">
 
-    <h1>Kandawala GR to Google Maps Converter</h1>
+  <!-- Forward: Lat/Lon → Grid -->
+  <label>Latitude (WGS84)</label>
+  <input id="lat" type="number" step="any" placeholder="e.g. 7.8731">
+  <label>Longitude (WGS84)</label>
+  <input id="lon" type="number" step="any" placeholder="e.g. 80.7718">
+  <button id="convert">Convert Lat/Lon → Grid</button>
 
-    <div class="container">
-        <label for="mapsheet">Select Map Sheet:</label>
-        <select id="mapsheet">
-            <!-- Map sheet options will be populated here -->
-        </select>
+  <!-- Reverse: Grid → Lat/Lon -->
+  <label style="margin-top:20px;">Military Grid Reference (4/6/8-figure)</label>
+  <input id="gridRef" type="text" placeholder="e.g. 681876">
+  <button id="convert-gr">Convert Grid → Lat/Lon</button>
 
-        <label for="easting">Easting (3 digits):</label>
-        <input type="number" id="easting" placeholder="Enter Easting (e.g., 682)" required>
+  <!-- Output -->
+  <div class="output">
+    <div><strong>WGS84:</strong> <span id="out-wgs"></span></div>
+    <div><strong>Kandawala:</strong> <span id="out-kanda"></span></div>
+    <div><strong>SLD99:</strong> <span id="out-sld"></span></div>
+    <div><strong>UTM 44N:</strong> <span id="out-utm"></span></div>
+    <div><strong>Military GR:</strong> <span id="out-gr"></span></div>
+  </div>
 
-        <label for="northing">Northing (3 digits):</label>
-        <input type="number" id="northing" placeholder="Enter Northing (e.g., 717)" required>
+  <!-- Map -->
+  <iframe id="map"></iframe>
+</div>
 
-        <button onclick="convertGR()">Show on Map</button>
+<script>
+  // === PROJ4 DEFINITIONS ===
+  proj4.defs("EPSG:5235","+proj=tmerc +lat_0=7 +lon_0=81 +k=0.9999238418 +x_0=200000 +y_0=200000 +a=6377276.345 +rf=300.8017 +towgs84=-97,787,86,0,0,0,0 +units=m +no_defs"); // Kandawala
+  proj4.defs("EPSG:5236","+proj=tmerc +lat_0=0 +lon_0=81 +k=0.999923 +x_0=200000 +y_0=200000 +datum=WGS84 +units=m +no_defs"); // SLD99
+  proj4.defs("EPSG:32644","+proj=utm +zone=44 +datum=WGS84 +units=m +no_defs"); // UTM 44N
 
-        <div id="map"></div>
-    </div>
+  const el = id => document.getElementById(id);
 
-    <script>
-        // List of map sheets with their corresponding first digits for Easting and Northing
-        const mapSheets = [
-            { name: "Sheet 1", eastingPrefix: 168, northingPrefix: 875 },
-            { name: "Sheet 2", eastingPrefix: 167, northingPrefix: 874 },
-            { name: "Sheet 3", eastingPrefix: 169, northingPrefix: 876 },
-            { name: "Sheet 4", eastingPrefix: 170, northingPrefix: 877 },
-            { name: "Sheet 5", eastingPrefix: 171, northingPrefix: 878 },
-            { name: "Sheet 6", eastingPrefix: 172, northingPrefix: 879 },
-            { name: "Sheet 7", eastingPrefix: 173, northingPrefix: 880 },
-            { name: "Sheet 8", eastingPrefix: 174, northingPrefix: 881 },
-            { name: "Sheet 9", eastingPrefix: 175, northingPrefix: 882 },
-            { name: "Sheet 10", eastingPrefix: 176, northingPrefix: 883 },
-            { name: "Sheet 11", eastingPrefix: 177, northingPrefix: 884 },
-            { name: "Sheet 12", eastingPrefix: 178, northingPrefix: 885 },
-            { name: "Sheet 13", eastingPrefix: 179, northingPrefix: 886 },
-            { name: "Sheet 14", eastingPrefix: 180, northingPrefix: 887 },
-            { name: "Sheet 15", eastingPrefix: 181, northingPrefix: 888 },
-            { name: "Sheet 16", eastingPrefix: 182, northingPrefix: 889 },
-            { name: "Sheet 17", eastingPrefix: 183, northingPrefix: 890 },
-            { name: "Sheet 18", eastingPrefix: 184, northingPrefix: 891 },
-            { name: "Sheet 19", eastingPrefix: 185, northingPrefix: 892 },
-            { name: "Sheet 20", eastingPrefix: 186, northingPrefix: 893 },
-            { name: "Sheet 21", eastingPrefix: 187, northingPrefix: 894 },
-            { name: "Sheet 22", eastingPrefix: 188, northingPrefix: 895 },
-            { name: "Sheet 23", eastingPrefix: 189, northingPrefix: 896 },
-            { name: "Sheet 24", eastingPrefix: 190, northingPrefix: 897 },
-            { name: "Sheet 25", eastingPrefix: 191, northingPrefix: 898 },
-            { name: "Sheet 26", eastingPrefix: 192, northingPrefix: 899 },
-            { name: "Sheet 27", eastingPrefix: 193, northingPrefix: 900 },
-            { name: "Sheet 28", eastingPrefix: 194, northingPrefix: 901 },
-            { name: "Sheet 29", eastingPrefix: 195, northingPrefix: 902 },
-            { name: "Sheet 30", eastingPrefix: 196, northingPrefix: 903 },
-            { name: "Sheet 31", eastingPrefix: 197, northingPrefix: 904 },
-            { name: "Sheet 32", eastingPrefix: 198, northingPrefix: 905 },
-            { name: "Sheet 33", eastingPrefix: 199, northingPrefix: 906 },
-            { name: "Sheet 34", eastingPrefix: 200, northingPrefix: 907 },
-            { name: "Sheet 35", eastingPrefix: 201, northingPrefix: 908 },
-            { name: "Sheet 36", eastingPrefix: 202, northingPrefix: 909 },
-            { name: "Sheet 37", eastingPrefix: 203, northingPrefix: 910 },
-            { name: "Sheet 38", eastingPrefix: 204, northingPrefix: 911 },
-            { name: "Sheet 39", eastingPrefix: 205, northingPrefix: 912 },
-            { name: "Sheet 40", eastingPrefix: 206, northingPrefix: 913 },
-            { name: "Sheet 41", eastingPrefix: 207, northingPrefix: 914 },
-            { name: "Sheet 42", eastingPrefix: 208, northingPrefix: 915 },
-            { name: "Sheet 43", eastingPrefix: 209, northingPrefix: 916 },
-            { name: "Sheet 44", eastingPrefix: 210, northingPrefix: 917 },
-            { name: "Sheet 45", eastingPrefix: 211, northingPrefix: 918 },
-            { name: "Sheet 46", eastingPrefix: 212, northingPrefix: 919 },
-            { name: "Sheet 47", eastingPrefix: 213, northingPrefix: 920 },
-            { name: "Sheet 48", eastingPrefix: 214, northingPrefix: 921 },
-            { name: "Sheet 49", eastingPrefix: 215, northingPrefix: 922 },
-            { name: "Sheet 50", eastingPrefix: 216, northingPrefix: 923 }
-        ];
+  // Parse GR string (4,6,8 figure)
+  function parseGridRef(gr, figures=6){
+    const clean = gr.replace(/[^0-9]/g,'');
+    const d = figures/2;
+    if(clean.length !== figures) return null;
+    const ePart = clean.substring(0,d);
+    const nPart = clean.substring(d);
+    const divisor = Math.pow(10, 5-d);
+    const easting = parseInt(ePart) * divisor + divisor/2;
+    const northing = parseInt(nPart) * divisor + divisor/2;
+    return {easting, northing};
+  }
 
-        // Populate the map sheet dropdown
-        const mapsheetSelect = document.getElementById('mapsheet');
-        mapSheets.forEach((sheet, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = sheet.name;
-            mapsheetSelect.appendChild(option);
-        });
+  // GR → Lat/Lon
+  function grToLatLon(gr, figures=6){
+    const parsed = parseGridRef(gr, figures);
+    if(!parsed) return null;
+    const {easting, northing} = parsed;
+    const [lon, lat] = proj4("EPSG:5235","EPSG:4326",[easting, northing]);
+    return {lat, lon};
+  }
 
-        // Function to convert Kandawala GR to Google Maps Lat/Lon
-        function convertGR() {
-            const sheetIndex = mapsheetSelect.value;
-            const easting = parseInt(document.getElementById('easting').value);
-            const northing = parseInt(document.getElementById('northing').value);
+  // Lat/Lon → GR (6-figure default)
+  function toGridRef(easting, northing, figures=6){
+    const d = figures/2;
+    const divisor = Math.pow(10, 5-d);
+    const ePart = Math.floor(easting/divisor).toString().padStart(d,"0");
+    const nPart = Math.floor(northing/divisor).toString().padStart(d,"0");
+    return ePart+nPart;
+  }
 
-            if (isNaN(easting) || isNaN(northing)) {
-                alert("Please enter valid Easting and Northing values.");
-                return;
-            }
+  // Map Renderer
+  function renderMap(lat, lon){
+    const url = `https://www.google.com/maps?q=${lat},${lon}&t=h&z=15&output=embed`;
+    el("map").src = url;
+  }
 
-            const sheet = mapSheets[sheetIndex];
-            const fullEasting = sheet.eastingPrefix * 1000 + easting;
-            const fullNorthing = sheet.northingPrefix * 1000 + northing;
+  // === Forward Conversion ===
+  el("convert").addEventListener("click", ()=>{
+    const lat = parseFloat(el("lat").value);
+    const lon = parseFloat(el("lon").value);
+    if(isNaN(lat)||isNaN(lon)){ alert("Enter valid Lat/Lon"); return; }
 
-            // Convert Kandawala Grid to WGS84 Lat/Lon
-            const latLon = kandawalaToLatLon(fullEasting, fullNorthing);
+    // Transform
+    const [kX,kY] = proj4("EPSG:4326","EPSG:5235",[lon,lat]);
+    const [sX,sY] = proj4("EPSG:4326","EPSG:5236",[lon,lat]);
+    const [uX,uY] = proj4("EPSG:4326","EPSG:32644",[lon,lat]);
 
-            // Initialize Google Map
-            const map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 15,
-                center: latLon
-            });
+    const gr = toGridRef(kX,kY,6);
 
-            // Add a marker at the location
-            new google.maps.Marker({
-                position: latLon,
-                map: map,
-                title: `GR: ${easting}${northing}`
-            });
-        }
+    el("out-wgs").textContent = `Lat ${lat.toFixed(6)}, Lon ${lon.toFixed(6)}`;
+    el("out-kanda").textContent = `E ${kX.toFixed(2)}, N ${kY.toFixed(2)}`;
+    el("out-sld").textContent = `E ${sX.toFixed(2)}, N ${sY.toFixed(2)}`;
+    el("out-utm").textContent = `E ${uX.toFixed(2)}, N ${uY.toFixed(2)}`;
+    el("out-gr").textContent = `GR ${gr}`;
 
-        // Kandawala to WGS84 conversion function
-        function kandawalaToLatLon(easting, northing) {
-            // Kandawala projection parameters
-            const centralMeridian = 80 + 46 / 60 + 18.16710 / 3600; // E
-            const latitudeOfOrigin = 7 + 0 / 60 + 1.69750 / 3600; // N
-            const scaleFactor = 0.9999238418;
-            const falseEasting = 200000;
-            const falseNorthing = 200000;
-            const a = 6377276.345; // Semi-major axis of Everest 1830 ellipsoid
-            const f = 1 / 300.8017; // Flattening of Everest 1830 ellipsoid
+    renderMap(lat, lon);
+  });
 
-            // Calculate the central meridian in radians
-            const λ0 = centralMeridian * Math.PI / 180;
+  // === Reverse Conversion ===
+  el("convert-gr").addEventListener("click", ()=>{
+    const grRaw = el("gridRef").value.trim();
+    const len = grRaw.replace(/[^0-9]/g,'').length;
+    if(![4,6,8].includes(len)){ alert("Enter 4, 6, or 8 figure GR"); return; }
 
-            // Calculate the latitude of origin in radians
+    const result = grToLatLon(grRaw,len);
+    if(!result){ alert("Invalid GR"); return; }
+    const {lat, lon} = result;
 
-::contentReference[oaicite:0]{index=0}
-            const φ0 = latitudeOfOrigin * Math.PI / 180;
+    // Transform again for outputs
+    const [kX,kY] = proj4("EPSG:4326","EPSG:5235",[lon,lat]);
+    const [sX,sY] = proj4("EPSG:4326","EPSG:5236",[lon,lat]);
+    const [uX,uY] = proj4("EPSG:4326","EPSG:32644",[lon,lat]);
+    const gr = toGridRef(kX,kY,len);
 
-            // Remove false easting/northing
-            const x = easting - falseEasting;
-            const y = northing - falseNorthing;
+    el("out-wgs").textContent = `Lat ${lat.toFixed(6)}, Lon ${lon.toFixed(6)}`;
+    el("out-kanda").textContent = `E ${kX.toFixed(2)}, N ${kY.toFixed(2)}`;
+    el("out-sld").textContent = `E ${sX.toFixed(2)}, N ${sY.toFixed(2)}`;
+    el("out-utm").textContent = `E ${uX.toFixed(2)}, N ${uY.toFixed(2)}`;
+    el("out-gr").textContent = `GR ${gr}`;
 
-            // Calculate flattening and eccentricity
-            const b = a * (1 - f);
-            const e2 = (a * a - b * b) / (a * a);
-
-            // Meridian arc approximation
-            const M0 = 0; // At latitude of origin
-            const M = M0 + y / scaleFactor;
-
-            // Footpoint latitude (iterative approximation)
-            let φf = M / a;
-            for (let i = 0; i < 5; i++) {
-                const Ma = a * ((1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 * e2 * e2 / 256) * φf
-                    - (3 * e2 / 8 + 3 * e2 * e2 / 32 + 45 * e2 * e2 * e2 / 1024) * Math.sin(2 * φf)
-                    + (15 * e2 * e2 / 256 + 45 * e2 * e2 * e2 / 1024) * Math.sin(4 * φf)
-                    - (35 * e2 * e2 * e2 / 3072) * Math.sin(6 * φf));
-                φf = φf + (M - Ma) / a;
-            }
-
-            const sinφf = Math.sin(φf);
-            const cosφf = Math.cos(φf);
-            const tanφf = Math.tan(φf);
-            const ν = a / Math.sqrt(1 - e2 * sinφf * sinφf);
-            const ρ = a * (1 - e2) / Math.pow(1 - e2 * sinφf * sinφf, 1.5);
-            const η2 = ν / ρ - 1;
-
-            const E = x;
-            const E2 = E * E;
-
-            // Latitude calculation
-            const φ = φf - (tanφf / (2 * ρ * ν)) * E2
-                      + (tanφf / (24 * ρ * Math.pow(ν, 3))) * (5 + 3 * tanφf * tanφf + η2 - 9 * tanφf * tanφf * η2) * Math.pow(E, 4);
-
-            // Longitude calculation
-            const λ = λ0 + (1 / (cosφf * ν)) * E
-                      - (1 / (6 * cosφf * Math.pow(ν, 3))) * (1 + 2 * tanφf * tanφf + η2) * Math.pow(E, 3);
-
-            // Convert radians to degrees
-            const lat = φ * 180 / Math.PI;
-            const lng = λ * 180 / Math.PI;
-
-            return { lat, lng };
-        }
-    </script>
-
-    <!-- Google Maps JS API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap" async defer></script>
-
+    renderMap(lat, lon);
+  });
+</script>
 </body>
 </html>
-
- 
